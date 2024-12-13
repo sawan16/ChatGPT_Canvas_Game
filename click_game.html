@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Square Click Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: black;
+        }
+        canvas {
+            display: block;
+        }
+        #scoreboard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="scoreboard">
+        Score: <span id="score">0</span> | Time Left: <span id="time">10</span>s
+    </div>
+    <canvas id="colorCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('colorCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreboard = document.getElementById('scoreboard');
+        const scoreDisplay = document.getElementById('score');
+        const timeDisplay = document.getElementById('time');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let score = 0;
+        let timeLeft = 10;
+        const colorScores = {
+            "#FF0000": 10, // Red
+            "#00FF00": 20, // Green
+            "#0000FF": 30, // Blue
+            "#FFFF00": 40, // Yellow
+            "#FF00FF": 50, // Magenta
+            "#00FFFF": 60  // Cyan
+        };
+
+        class Square {
+            constructor(x, y, size, color) {
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.color = color;
+                this.dx = Math.random() * 4 - 2;
+                this.dy = Math.random() * 4 - 2;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+
+                if (this.x < 0 || this.x + this.size > canvas.width) {
+                    this.dx *= -1;
+                }
+
+                if (this.y < 0 || this.y + this.size > canvas.height) {
+                    this.dy *= -1;
+                }
+
+                this.draw();
+            }
+
+            isClicked(mouseX, mouseY) {
+                return (
+                    mouseX >= this.x &&
+                    mouseX <= this.x + this.size &&
+                    mouseY >= this.y &&
+                    mouseY <= this.y + this.size
+                );
+            }
+        }
+
+        const squares = [];
+
+        function getRandomColor() {
+            const colors = Object.keys(colorScores);
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function init() {
+            for (let i = 0; i < 100; i++) {
+                const size = Math.random() * 50 + 10;
+                const x = Math.random() * (canvas.width - size);
+                const y = Math.random() * (canvas.height - size);
+                const color = getRandomColor();
+                squares.push(new Square(x, y, size, color));
+            }
+        }
+
+        function animate() {
+            if (timeLeft <= 0) {
+                alert(`Game Over! Your final score is: ${score}`);
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            squares.forEach(square => square.update());
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('click', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            for (let i = squares.length - 1; i >= 0; i--) {
+                if (squares[i].isClicked(mouseX, mouseY)) {
+                    score += colorScores[squares[i].color] || 5;
+                    timeLeft += 3;
+                    squares.splice(i, 1);
+                    break;
+                }
+            }
+
+            scoreDisplay.textContent = score;
+            timeDisplay.textContent = timeLeft;
+        });
+
+        function countdown() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                timeDisplay.textContent = timeLeft;
+                setTimeout(countdown, 1000);
+            }
+        }
+
+        init();
+        animate();
+        countdown();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            squares.length = 0;
+            init();
+        });
+    </script>
+</body>
+</html>
